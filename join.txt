@@ -1,0 +1,206 @@
+->leftJoin('issue_executor_histories', function($join){
+                                $join->on('issue_breaches.reference_no', '=', 'issue_executor_histories.reference_number');
+                                $join->on('issue_breaches.subgroup_id', '=', 'issue_executor_histories.executor_subgroup_id');
+                                ->where(function($query){
+                                    $query->where('issue_breaches.subgroup_id', '=', 'issue_executor_histories.executor_subgroup_id');
+                                });
+                            })
+
+
+
+
+$totalSlaTimeFromTouchPoint = \Illuminate\Support\Facades\DB::table('issue_group_workflows')
+                                                    ->where('issue_workflows.issue_id', $issue_id)
+                                                    ->leftJoin('issue_workflows', function($join){
+                                                        $join->on('issue_workflows.issue_workflow_id', '=', 'issue_group_workflows.issue_workflow_id');
+                                                    })
+                                                    ->first();
+
+
+$issue_id = $data['issue_id'];
+                    $totalSlaTimeFroTouchPoint = \Illuminate\Support\Facades\DB::table('issue_group_workflows')
+                                            ->where('issue_workflows.issue_id', $issue_id)
+                                            ->leftJoin('issue_workflows', function($join){
+                                                $join->on('issue_workflows.issue_workflow_id', '=', 'issue_group_workflows.issue_workflow_id');
+                                            })
+                                            ->first();
+
+
+
+UPDATE `references` AS r1
+JOIN (
+    SELECT id
+    FROM `references`
+    ORDER BY id DESC
+    LIMIT 5
+) AS r2
+ON r1.id = r2.id
+SET r1.form_status = 11;
+
+
+DELETE r1 FROM `references` r1
+JOIN (
+    SELECT id
+    FROM `references`
+    ORDER BY id DESC
+    LIMIT 5
+) AS r2
+ON r1.id = r2.id;
+
+
+
+UPDATE `references` SET `form_status`='12',`access_by`='',`access_date`='' WHERE `references`.`reference_number` IN ('C2307041004370018','C2309122006030049');
+
+
+
+SELECT * FROM `comments` WHERE action LIKE '%Sent Back to Touch group maker Forwarded%';
+
+
+
+$priorityStatusChange = DB::table('comments')
+                                        ->select('time', 'user_id')
+                                        ->where('reference_number', '=', $data['reference_number'])
+                                        ->where(function($query) {
+                                            $query->where('comments', 'LIKE', '%changed priority from%');
+                                            // $query->where('comments', 'LIKE', '%Priority changed from%')
+                                            //     ->orWhere('comments', 'LIKE', '%changed priority from%');
+                                        })
+                                        ->first();
+
+
+
+SELECT * FROM `unit_items` WHERE `name` IN ('Lien Card Closure', 'Email Address Update');
+SELECT * FROM `unit_items` WHERE `name` LIKE 'Lien Card Closure' OR `name` LIKE 'Email Address Update';
+
+
+SELECT * 
+FROM `references`
+LEFT JOIN `issue_workflows` ON `references`.`issue_id` = `issue_workflows`.`issue_id`
+LEFT JOIN `unit_items` ON `references`.`issue_id` = `unit_items`.`master_id`
+WHERE `references`.`form_status` NOT IN ('-1', '-2', '11', '12') 
+  AND `issue_workflows`.`flow_type` = 'forward' 
+  AND `unit_items`.`issues_from` = 'wform';
+
+
+
+SELECT `references`.*, `issue_workflows`.`flow_type`, `unit_items`.`name`, `subgroup_info`.`name`
+FROM `references`
+LEFT JOIN `issue_workflows` ON `references`.`issue_id` = `issue_workflows`.`issue_id`
+LEFT JOIN `unit_items` ON `references`.`issue_id` = `unit_items`.`master_id`
+LEFT JOIN `subgroup_info` ON `references`.`sub_group_info_id` = `subgroup_info`.`id`
+WHERE `references`.`form_status` NOT IN ('-1', '-2', '11', '12') 
+  AND `references`.`date` BETWEEN UNIX_TIMESTAMP('2023-12-14 00:00:00') AND UNIX_TIMESTAMP('2023-12-14 17:00:59')
+  AND `issue_workflows`.`flow_type` = 'forward' 
+  AND `unit_items`.`issues_from` = 'wform';
+
+
+=============== MTB Report ================================
+
+select rf.reference_number as "Ticket Number", CONCAT ( rf.created_by, ' (', subgroup_info.name, ')' ) as "Maker", DATE_FORMAT(FROM_UNIXTIME(rf.date), '%d-%m-%Y') AS 'Log Date', wf.custClientID as "CIF/UCIC/Client ID", wf.cardMaskPAN as "Card Number", ui.name as "Service Request Type", null as "Currency",
+replace(JSON_EXTRACT( w_form_type.extra_field, "$[2].Txn Amount"), '"', '') AS 'Amount',
+JSON_VALUE( w_form_type.extra_field, "$[3].Tenure") AS 'Tenure' 
+from references rf 
+join w_form wf on wf.reference_number = rf.reference_number
+join unit_items ui on ui.master_id = rf.issue_id
+join users on users.user_id = rf.created_by
+join user_units on user_units.user_id = users.id
+join subgroup_info on subgroup_info.id = user_units.subgroup_info_id
+join w_form_type on w_form_type.reference_number = rf.reference_number
+where FROM_UNIXTIME(rf.date,'%Y-%m-%d %H:%i') >= '2021-10-01 00:00' and FROM_UNIXTIME(rf.date,'%Y-%m-%d %H:%i') <= '2021-10-15 23:59'
+and rf.issue_id = 195;
+
+
+==========================================
+
+select `w_form1`.*, `w_form`.`product_type` as `product_type_ext`, `w_form`.`w_form_type` as `form_type`, `product_types`.`name` as `product_type`, `unit_items`.`name` as `category_name`, `references`.`reference_number`, `references`.`created_by`, `references`.`date`, `references`.`callback_status`, `references`.`status`, `references`.`form_status`, `references`.`access_by`, `references`.`access_date`, `subgroup_info`.`name`, `references`.`unit_id`, `user_subgroup_infos`.`subgroup_name` as `source_maker`, FROM_UNIXTIME(references.date,'%d-%m-%Y') AS UNXTIME, FROM_UNIXTIME(references.access_date,'%d-%b-%Y') AS last_access_dt, `comments`.`time` as `action_time` from `w_form` left join `references` on `references`.`reference_number` = `w_form`.`reference_number` left join `user_subgroup_infos` on `user_subgroup_infos`.`username` = `references`.`created_by` left join `subgroup_info` on `subgroup_info`.`id` = `references`.`sub_group_info_id` left join `product_types` on `product_types`.`id` = `w_form`.`product_type` left join `unit_items` on `unit_items`.`master_id` = `w_form`.`w_form_type` and `unit_items`.`issues_from` = 'wform' inner join `comments` on `comments`.`reference_number` = `references`.`reference_number` and `comments`.`subgroup_id` = 36 where `comments`.`unit_id` in (2) and (`comments`.`subgroup_id` = 36 or 0 = 1) and (FROM_UNIXTIME(comments.time,'%Y-%m-%d %H:%i') >= 2023-12-01 00:00 and FROM_UNIXTIME(comments.time,'%Y-%m-%d %H:%i') <= 2023-12-21 23:59) group by `references`.`reference_number` order by `references`.`reference_number` desc limit 15 offset 0)
+
+
+
+===================================================================
+-------------------with issue category ,    ------- without issue
+select `w_form1`.*, `w_form`.`product_type` as `product_type_ext`, `w_form`.`w_form_type` as `form_type`, `product_types`.`name` as `product_type`, `unit_items`.`name` as `category_name`, `references`.`reference_number`, `references`.`created_by`, `references`.`date`, `references`.`callback_status`, `references`.`status`, `references`.`form_status`, `references`.`access_by`, `references`.`access_date`, `subgroup_info`.`name`, `references`.`unit_id`, `user_subgroup_infos`.`subgroup_name` as `source_maker`, FROM_UNIXTIME(references.date,'%d-%m-%Y') AS UNXTIME, FROM_UNIXTIME(references.access_date,'%d-%b-%Y') AS last_access_dt, `w_form_type`.`extra_field`, `comments`.`time` as `action_time` from `w_form` left join `references` on `references`.`reference_number` = `w_form`.`reference_number` left join `user_subgroup_infos` on `user_subgroup_infos`.`username` = `references`.`created_by` left join `subgroup_info` on `subgroup_info`.`id` = `references`.`sub_group_info_id` left join `product_types` on `product_types`.`id` = `w_form`.`product_type` left join `unit_items` on `unit_items`.`master_id` = `w_form`.`w_form_type` and `unit_items`.`issues_from` = 'wform' left join `w_form_type` on `w_form_type`.`reference_number` = `references`.`reference_number` inner join `comments` on `comments`.`reference_number` = `references`.`reference_number` and `comments`.`subgroup_id` = 36 where `subgroup_info`.`id` = 36 and (`form_status` in (null, 0, 2, 10)) and (`w_form`.`product_type` = 1 or `w_form`.`product_type` = Credit Card) and (`unit_items`.`issue_categories_id` = 24) and `comments`.`unit_id` in (2) and (`comments`.`subgroup_id` = 36 or 0 = 1) group by `references`.`reference_number` order by `references`.`reference_number` desc limit 15 offset 0)
+
+
+
+
+++++++++============ with qudition
+
+SELECT 
+    rf.reference_number AS "Ticket Number", 
+    CONCAT(rf.created_by, ' (', subgroup_info.name, ')') AS "Maker", 
+    DATE_FORMAT(FROM_UNIXTIME(rf.date), '%d-%m-%Y') AS 'Log Date', 
+    wf.custClientID AS "CIF/UCIC/Client ID", 
+    wf.cardMaskPAN AS "Card Number", 
+    ui.name AS "Service Request Type", 
+    NULL AS "Currency",
+    JSON_EXTRACT(w_form_type.extra_field, '$[2]."Txn Amount"') AS 'Amount',
+    JSON_VALUE(w_form_type.extra_field, '$[3]."Tenure"') AS 'Tenure' 
+FROM 
+    `references` rf 
+JOIN 
+    w_form wf ON wf.reference_number = rf.reference_number
+JOIN 
+    unit_items ui ON ui.master_id = rf.issue_id
+JOIN 
+    users ON users.user_id = rf.created_by
+JOIN 
+    user_units ON user_units.user_id = users.id
+JOIN 
+    subgroup_info ON subgroup_info.id = user_units.subgroup_info_id
+JOIN 
+    w_form_type ON w_form_type.reference_number = rf.reference_number
+WHERE 
+    FROM_UNIXTIME(rf.date,'%Y-%m-%d %H:%i') >= '2021-10-01 00:00' 
+    AND FROM_UNIXTIME(rf.date,'%Y-%m-%d %H:%i') <= '2021-10-15 23:59'
+    AND rf.issue_id = 195;
+
+
+
++++============== with out qoudition
+
+SELECT 
+    rf.reference_number AS "Ticket Number", 
+    CONCAT(rf.created_by, ' (', subgroup_info.name, ')') AS "Maker", 
+    DATE_FORMAT(FROM_UNIXTIME(rf.date), '%d-%m-%Y') AS 'Log Date', 
+    wf.custClientID AS "CIF/UCIC/Client ID", 
+    wf.cardMaskPAN AS "Card Number", 
+    ui.name AS "Service Request Type", 
+    NULL AS "Currency",
+    REPLACE(JSON_EXTRACT(w_form_type.extra_field, '$[2]."Txn Amount"'), '"', '') AS 'Amount',
+    JSON_VALUE(w_form_type.extra_field, '$[3]."Tenure"') AS 'Tenure' 
+FROM 
+    `references` rf 
+JOIN 
+    w_form wf ON wf.reference_number = rf.reference_number
+JOIN 
+    unit_items ui ON ui.master_id = rf.issue_id
+JOIN 
+    users ON users.user_id = rf.created_by
+JOIN 
+    user_units ON user_units.user_id = users.id
+JOIN 
+    subgroup_info ON subgroup_info.id = user_units.subgroup_info_id
+JOIN 
+    w_form_type ON w_form_type.reference_number = rf.reference_number
+WHERE 
+    FROM_UNIXTIME(rf.date,'%Y-%m-%d %H:%i') >= '2021-10-01 00:00' 
+    AND FROM_UNIXTIME(rf.date,'%Y-%m-%d %H:%i') <= '2021-10-15 23:59'
+    AND rf.issue_id = 195;
+
+
+
+================================= Delete last data
+if same person  assign after resolved 
+DELETE FROM `comments` WHERE `reference_number` LIKE 'S2312251007720002' ORDER BY id DESC LIMIT 1;
+
+==================================================================== assign in subgroup
+UPDATE `references` SET `access_date` = NULL, access_by = NULL, `subgroup_id` = '12', `sub_group_info_id` = '16', `unit_id` = '1' WHERE `references`.`id` = '';
+
+UPDATE `comments` SET `group_id` = '1', `subgroup_id` = '1' WHERE `comments`.`id` = '1532206';
+
+
+
+
+
+
+
